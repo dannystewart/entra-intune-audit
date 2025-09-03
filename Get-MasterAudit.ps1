@@ -9,7 +9,6 @@
     - Computers in Entra that have been active since the specified cutoff date (default: 30 days ago)
     - Devices in Intune that have been active since the same date
     - Device join status, enrollment details, and user associations
-    - Orphaned Entra devices that do not have a user association
 
     Unless otherwise specified, the script will create a timestamped file in the current directory:
     MasterAudit_YYYY-MM-DD_HH-mm-ss.xlsx
@@ -48,7 +47,7 @@
 
 .NOTES
     Author: Danny Stewart
-    Version: 1.0.0
+    Version: 1.1.0
     License: MIT
     Created: 2025-09-03
     Repository: https://github.com/dannystewart/entra-intune-audit
@@ -330,7 +329,6 @@ function Get-EntraDevices {
                 RegistrationDateTime     = $device.RegistrationDateTime
                 LastSignInDateTime       = $device.ApproximateLastSignInDateTime
                 # Report Metadata
-                Source                   = "Entra"
                 ActiveSinceCutoff        = if ($device.ApproximateLastSignInDateTime) {
                     $device.ApproximateLastSignInDateTime -ge $DeviceActivityCutoffDate
                 } else {
@@ -415,7 +413,6 @@ function Get-IntuneDevices {
                 LastSyncDateTime         = $device.LastSyncDateTime
                 EnrolledDateTime         = $device.EnrolledDateTime
                 # Report Metadata
-                Source                   = "Intune"
                 ActiveSinceCutoff        = if ($device.LastSyncDateTime) {
                     $device.LastSyncDateTime -ge $DeviceActivityCutoffDate
                 } else {
@@ -432,53 +429,6 @@ function Get-IntuneDevices {
         Write-AuditLog "Error retrieving Intune devices: $($_.Exception.Message)" -Level "ERROR"
         return @()
     }
-}
-
-function Get-OrphanedEntraDevices {
-    param(
-        [array]$EntraDevices
-    )
-
-    Write-AuditLog "Identifying orphaned Entra devices (devices without user associations)..." -Level "INFO"
-
-    # Filter devices that don't have a primary user association
-    $orphanedDevices = $EntraDevices | Where-Object {
-        -not $_.PrimaryUserUPN -or [string]::IsNullOrWhiteSpace($_.PrimaryUserUPN)
-    }
-
-    Write-AuditLog "Found $($orphanedDevices.Count) orphaned devices in Entra (no user association)." -Level "SUCCESS"
-
-    # Create enhanced objects for orphaned devices with additional context
-    $orphanedResults = @()
-    foreach ($device in $orphanedDevices) {
-        $orphanedResults += [PSCustomObject]@{
-            # Device IDs
-            DeviceId                 = $device.DeviceId
-            DeviceObjectId           = $device.DeviceObjectId
-            # Device Name
-            DeviceName               = $device.DeviceName
-            # Operating System
-            OperatingSystem          = $device.OperatingSystem
-            OSVersion                = $device.OSVersion
-            # Hardware Info
-            Manufacturer             = $device.Manufacturer
-            Model                    = $device.Model
-            # Device Status/Config
-            TrustType                = $device.TrustType
-            JoinStatus               = $device.JoinStatus
-            IsCompliant              = $device.IsCompliant
-            IsManaged                = $device.IsManaged
-            DeviceOwnership          = $device.DeviceOwnership
-            # Activity Dates
-            RegistrationDateTime     = $device.RegistrationDateTime
-            LastSignInDateTime       = $device.LastSignInDateTime
-            # Report Metadata
-            ExportDate               = Get-Date
-            DeviceActivityCutoffDate = $device.DeviceActivityCutoffDate
-        }
-    }
-
-    return $orphanedResults | Sort-Object DeviceName
 }
 
 function Compare-EntraIntuneDevices {
@@ -612,8 +562,7 @@ function Export-Results {
         [array]$Users,
         [array]$EntraDevices,
         [array]$IntuneDevices,
-        [object]$DeviceComparison,
-        [array]$OrphanedEntraDevices
+        [object]$DeviceComparison
     )
 
     try {
@@ -659,13 +608,8 @@ function Export-Results {
             }
         }
 
-        # Add separate worksheet for orphaned Entra devices
-        if ($OrphanedEntraDevices.Count -gt 0) {
-            $OrphanedEntraDevices | Export-Excel -Path $excelPath -WorksheetName "Orphaned Entra Devices" -TableName "Orphaned Entra Devices Table" -TableStyle Medium2 -FreezeTopRow -AutoSize -ClearSheet
-        }
-
         Write-AuditLog "Exported device audit to: $excelPath" -Level "SUCCESS"
-        Write-AuditLog "Workbook contains: Users ($($Users.Count)), Entra ($($EntraDevices.Count)), Intune ($($IntuneDevices.Count)), Matched ($($DeviceComparison.MatchedDevices.Count)), Entra-Only ($($DeviceComparison.EntraOnlyDevices.Count)), Intune-Only ($($DeviceComparison.IntuneOnlyDevices.Count)), Orphaned ($($OrphanedEntraDevices.Count))" -Level "INFO"
+        Write-AuditLog "Workbook contains: Users ($($Users.Count)), Entra ($($EntraDevices.Count)), Intune ($($IntuneDevices.Count)), Matched ($($DeviceComparison.MatchedDevices.Count)), Entra-Only ($($DeviceComparison.EntraOnlyDevices.Count)), Intune-Only ($($DeviceComparison.IntuneOnlyDevices.Count))" -Level "INFO"
     } catch {
         Write-AuditLog "Error during Excel export: $($_.Exception.Message)" -Level "ERROR"
     }
@@ -676,8 +620,7 @@ function Show-AuditSummary {
         [array]$Users,
         [array]$EntraDevices,
         [array]$IntuneDevices,
-        [object]$DeviceComparison,
-        [array]$OrphanedEntraDevices
+        [object]$DeviceComparison
     )
 
     Write-Host "`n" -NoNewline
@@ -728,24 +671,6 @@ function Show-AuditSummary {
         Write-Host "    Personal Owned: $personal" -ForegroundColor $(if ($personal -gt 0) { "Yellow" } else { "White" })
     }
 
-    Write-Host "`nORPHANED ENTRA DEVICES (no user association):" -ForegroundColor Yellow
-    Write-Host "  Total Orphaned Devices: $($OrphanedEntraDevices.Count)" -ForegroundColor $(if ($OrphanedEntraDevices.Count -gt 0) { "Red" } else { "Green" })
-
-    if ($OrphanedEntraDevices.Count -gt 0) {
-        $orphanedJoinTypes = $OrphanedEntraDevices | Group-Object JoinStatus | Sort-Object Count -Descending
-        foreach ($joinType in $orphanedJoinTypes) {
-            Write-Host "    $($joinType.Name): $($joinType.Count)" -ForegroundColor White
-        }
-
-        $recentOrphans = ($OrphanedEntraDevices | Where-Object {
-                $_.LastSignInDateTime -and $_.LastSignInDateTime -ge (Get-Date).AddDays(-30)
-            }).Count
-        $oldOrphans = $OrphanedEntraDevices.Count - $recentOrphans
-
-        Write-Host "    Active within 30 days: $recentOrphans" -ForegroundColor $(if ($recentOrphans -gt 0) { "Red" } else { "White" })
-        Write-Host "    Inactive >30 days: $oldOrphans" -ForegroundColor $(if ($oldOrphans -gt 0) { "Yellow" } else { "White" })
-    }
-
     if ($DeviceComparison) {
         Write-Host "`nDEVICE COMPARISON RESULTS:" -ForegroundColor Yellow
         Write-Host "  Matched Devices: $($DeviceComparison.MatchedDevices.Count)" -ForegroundColor Green
@@ -770,13 +695,12 @@ try {
     $entraDevices = Get-EntraDevices
     $intuneDevices = Get-IntuneDevices
     $deviceComparison = Compare-EntraIntuneDevices -EntraDevices $entraDevices -IntuneDevices $intuneDevices
-    $orphanedEntraDevices = Get-OrphanedEntraDevices -EntraDevices $entraDevices
 
     # Export results
-    Export-Results -Users $activeUsers -EntraDevices $entraDevices -IntuneDevices $intuneDevices -DeviceComparison $deviceComparison -OrphanedEntraDevices $orphanedEntraDevices
+    Export-Results -Users $activeUsers -EntraDevices $entraDevices -IntuneDevices $intuneDevices -DeviceComparison $deviceComparison
 
     # Show summary
-    Show-AuditSummary -Users $activeUsers -EntraDevices $entraDevices -IntuneDevices $intuneDevices -DeviceComparison $deviceComparison -OrphanedEntraDevices $orphanedEntraDevices
+    Show-AuditSummary -Users $activeUsers -EntraDevices $entraDevices -IntuneDevices $intuneDevices -DeviceComparison $deviceComparison
 
     Write-AuditLog "Device audit completed successfully!" -Level "SUCCESS"
 } catch {
