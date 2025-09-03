@@ -10,6 +10,20 @@
     - Devices in Intune that have been active since the same date
     - Device join status, enrollment details, and user associations
 
+    CROSS-SYSTEM DEVICE ANALYSIS:
+    The script performs sophisticated cross-referencing between Entra ID and Intune to identify:
+    - Matched Devices: Devices that exist in both systems (normal state)
+    - Entra-Only Devices: Devices authenticated in Entra but NOT managed by Intune (potential risk)
+    - Intune-Only Devices: Devices enrolled in Intune but not found in Entra (investigation needed)
+
+    OUTPUT WORKSHEETS:
+    - Active Users: All users from the specified group
+    - Entra Devices: All active devices from Entra ID
+    - Intune Devices: All active devices from Intune
+    - Matched Devices: Devices found in both systems with cross-referenced data
+    - Entra-Only Devices: Devices ONLY in Entra (orphaned/unmanaged - potential security risk)
+    - Intune-Only Devices: Devices ONLY in Intune (investigation needed)
+
     Unless otherwise specified, the script will create a timestamped file in the current directory:
     MasterAudit_YYYY-MM-DD_HH-mm-ss.xlsx
 
