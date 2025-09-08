@@ -41,27 +41,27 @@ The script connects to Microsoft Graph API to gather data from both Entra ID and
 ### Basic Usage
 
 ```powershell
-.\Get-MasterAudit.ps1 -ActiveUsersGroup "All Org Staff"
+.\Get-MasterAudit.ps1 -UserGroup "All Org Staff"
 ```
 
 ### Custom Cutoff Date
 
 ```powershell
 # 7 days ago
-.\Get-MasterAudit.ps1 -ActiveUsersGroup "All Org Staff" -DeviceActivityCutoffDate (Get-Date).AddDays(-7)
+.\Get-MasterAudit.ps1 -UserGroup "All Org Staff" -DeviceActivityCutoffDate (Get-Date).AddDays(-7)
 
 # Specific date
-.\Get-MasterAudit.ps1 -ActiveUsersGroup "All Org Staff" -DeviceActivityCutoffDate "2025-01-15 00:00:00"
+.\Get-MasterAudit.ps1 -UserGroup "All Org Staff" -DeviceActivityCutoffDate "2025-01-15 00:00:00"
 ```
 
 ### Custom Output Location
 
 ```powershell
 # Directory (creates timestamped file)
-.\Get-MasterAudit.ps1 -ActiveUsersGroup "All Org Staff" -OutputPath "C:\Audit"
+.\Get-MasterAudit.ps1 -UserGroup "All Org Staff" -OutputPath "C:\Audit"
 
 # Specific file
-.\Get-MasterAudit.ps1 -ActiveUsersGroup "All Org Staff" -OutputPath "C:\OneDrive\MasterAudit.xlsx"
+.\Get-MasterAudit.ps1 -UserGroup "All Org Staff" -OutputPath "C:\OneDrive\MasterAudit.xlsx"
 ```
 
 ## Output
@@ -80,7 +80,7 @@ The script generates an Excel workbook with the following worksheets:
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `ActiveUsersGroup` | string | Yes | - | Display name of the user group to audit |
+| `UserGroup` | string | Yes | - | Display name of the user group to audit |
 | `DeviceActivityCutoffDate` | DateTime | No | 30 days ago | Cutoff date for device activity |
 | `OutputPath` | string | No | Current directory | Output file path or directory |
 
@@ -98,19 +98,19 @@ The script maintains detailed logs in `MasterAudit.log` with color-coded console
 ### Standard Organizational Audit
 
 ```powershell
-.\Get-MasterAudit.ps1 -ActiveUsersGroup "All Org Staff"
+.\Get-MasterAudit.ps1 -UserGroup "All Org Staff"
 ```
 
 ### Weekly Device Activity Check
 
 ```powershell
-.\Get-MasterAudit.ps1 -ActiveUsersGroup "All Org Staff" -DeviceActivityCutoffDate (Get-Date).AddDays(-7)
+.\Get-MasterAudit.ps1 -UserGroup "All Org Staff" -DeviceActivityCutoffDate (Get-Date).AddDays(-7)
 ```
 
 ### Custom Output with Specific Date
 
 ```powershell
-.\Get-MasterAudit.ps1 -ActiveUsersGroup "All Org Staff" -DeviceActivityCutoffDate "2025-01-01 00:00:00" -OutputPath "C:\Reports\WeeklyAudit.xlsx"
+.\Get-MasterAudit.ps1 -UserGroup "All Org Staff" -DeviceActivityCutoffDate "2025-01-01 00:00:00" -OutputPath "C:\Reports\WeeklyAudit.xlsx"
 ```
 
 ## Notes
