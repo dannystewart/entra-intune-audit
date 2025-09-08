@@ -43,7 +43,7 @@
     Runs the script, exporting the final file to the current directory: MasterAudit_YYYY-MM-DD_HH-mm-ss.xlsx
 
 .EXAMPLE
-    .\Get-MasterAudit.ps1 -UserGroup "All Org Staff" -DeviceActivityCutoffDate (Get-Date).AddDays(-7)
+    .\Get-MasterAudit.ps1 -UserGroup "All Org Staff" -DeviceActivityCutoffDate "(Get-Date).AddDays(-7)"
     Uses 7 days ago as the cutoff date
 
 .EXAMPLE
@@ -60,9 +60,10 @@
 
 .NOTES
     Author: Danny Stewart
-    Version: 1.1.1
+    Version: 1.1.2
     License: MIT
-    Created: 2025-09-08
+    Created: 2025-06-13
+    Last modified: 2025-09-08
     Repository: https://github.com/dannystewart/entra-intune-audit
 #>
 
@@ -157,8 +158,6 @@ function Get-ActiveUsers {
         # Get group members
         $groupMembers = Get-MgGroupMember -GroupId $staffGroup.Id -All
         $userIds = $groupMembers | ForEach-Object { $_.Id }
-
-        Write-AuditLog "Processing $($userIds.Count) user members from the group." -Level "INFO"
 
         # Test if SignInActivity is accessible before processing batches
         $canAccessSignInActivity = $false
@@ -402,37 +401,38 @@ function Get-IntuneDevices {
 
             $deviceResults += [PSCustomObject]@{
                 # Device IDs
-                DeviceId                 = $device.Id
-                AzureADDeviceId          = $device.AzureADDeviceId
+                DeviceId                            = $device.Id
+                AzureADDeviceId                     = $device.AzureADDeviceId
                 # Device Name
-                DeviceName               = $device.DeviceName
+                DeviceName                          = $device.DeviceName
                 # User Info
-                UserDisplayName          = if ($associatedUser) { $associatedUser.DisplayName } else { $device.UserDisplayName }
-                UserPrincipalName        = $device.UserPrincipalName
+                UserDisplayName                     = if ($associatedUser) { $associatedUser.DisplayName } else { $device.UserDisplayName }
+                UserPrincipalName                   = $device.UserPrincipalName
                 # Operating System
-                OperatingSystem          = $device.OperatingSystem
-                OSVersion                = $device.OSVersion
+                OperatingSystem                     = $device.OperatingSystem
+                OSVersion                           = $device.OSVersion
                 # Hardware Info
-                Manufacturer             = $device.Manufacturer
-                Model                    = $device.Model
-                SerialNumber             = if ($device.SerialNumber -and $device.SerialNumber -ne 0) { $device.SerialNumber } else { "Unknown" }
+                Manufacturer                        = $device.Manufacturer
+                Model                               = $device.Model
+                SerialNumber                        = if ($device.SerialNumber -and $device.SerialNumber -ne 0) { $device.SerialNumber } else { "Unknown" }
                 # Device Status/Config
-                EnrollmentType           = $device.EnrollmentType
-                ComplianceState          = $device.ComplianceState
-                DeviceOwnership          = $device.ManagedDeviceOwnerType
-                IsSupervised             = $device.IsSupervised
-                IsEncrypted              = $device.IsEncrypted
+                EnrollmentType                      = $device.EnrollmentType
+                ComplianceState                     = $device.ComplianceState
+                DeviceOwnership                     = $device.ManagedDeviceOwnerType
+                IsSupervised                        = $device.IsSupervised
+                IsEncrypted                         = $device.IsEncrypted
                 # Activity Dates
-                LastSyncDateTime         = $device.LastSyncDateTime
-                EnrolledDateTime         = $device.EnrolledDateTime
+                LastSyncDateTime                    = $device.LastSyncDateTime
+                EnrolledDateTime                    = $device.EnrolledDateTime
+                ManagementCertificateExpirationDate = $device.ManagementCertificateExpirationDate
                 # Report Metadata
-                ActiveSinceCutoff        = if ($device.LastSyncDateTime) {
+                ActiveSinceCutoff                   = if ($device.LastSyncDateTime) {
                     $device.LastSyncDateTime -ge $DeviceActivityCutoffDate
                 } else {
                     "Unknown"
                 }
-                ExportDate               = Get-Date
-                DeviceActivityCutoffDate = $DeviceActivityCutoffDate
+                ExportDate                          = Get-Date
+                DeviceActivityCutoffDate            = $DeviceActivityCutoffDate
             }
         }
 
