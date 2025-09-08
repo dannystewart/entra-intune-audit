@@ -334,7 +334,7 @@ function Get-EntraDevices {
                     "AzureAd" { "Azure AD Joined" }
                     "ServerAd" { "Hybrid Azure AD Joined" }
                     "Workplace" { "Azure AD Registered" }
-                    default { if ($device.TrustType) { $device.TrustType } else { "UNKNOWN" } }
+                    default { if ($device.TrustType) { $device.TrustType } else { "Unknown" } }
                 }
                 IsCompliant              = $device.IsCompliant
                 IsManaged                = $device.IsManaged
@@ -346,7 +346,7 @@ function Get-EntraDevices {
                 ActiveSinceCutoff        = if ($device.ApproximateLastSignInDateTime) {
                     $device.ApproximateLastSignInDateTime -ge $DeviceActivityCutoffDate
                 } else {
-                    "UNKNOWN"
+                    "Unknown"
                 }
                 ExportDate               = Get-Date
                 DeviceActivityCutoffDate = $DeviceActivityCutoffDate
@@ -416,7 +416,7 @@ function Get-IntuneDevices {
                 # Hardware Info
                 Manufacturer             = $device.Manufacturer
                 Model                    = $device.Model
-                SerialNumber             = $device.SerialNumber
+                SerialNumber             = if ($device.SerialNumber -and $device.SerialNumber -ne 0) { $device.SerialNumber } else { "Unknown" }
                 # Device Status/Config
                 EnrollmentType           = $device.EnrollmentType
                 ComplianceState          = $device.ComplianceState
@@ -505,8 +505,6 @@ function Compare-EntraIntuneDevices {
                     # Activity Dates
                     EntraLastSignIn  = $entraDevice.LastSignInDateTime
                     IntuneLastSync   = $intuneDevice.LastSyncDateTime
-                    # Report Metadata
-                    Status           = "Matched"
                 }
             } else {
                 # Device only in Entra
