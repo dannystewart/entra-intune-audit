@@ -10,8 +10,7 @@
     - Devices in Intune that have been active since the same date
     - Device join status, enrollment details, and user associations
 
-    CROSS-SYSTEM DEVICE ANALYSIS:
-    The script performs sophisticated cross-referencing between Entra ID and Intune to identify:
+    It also performs sophisticated cross-referencing between Entra ID and Intune to identify:
     - Matched Devices: Devices that exist in both systems (normal state)
     - Entra-Only Devices: Devices authenticated in Entra but NOT managed by Intune (potential risk)
     - Intune-Only Devices: Devices enrolled in Intune but not found in Entra (investigation needed)
@@ -33,44 +32,44 @@
     also use relative dates with "(Get-Date).AddDays(-7)" where 7 is the number of days ago. (Be
     sure to use a negative value to calculate a past date.)
 
-.PARAMETER ActiveUsersGroup
-    The display name of the user group to retrieve members from.
+.PARAMETER UserGroup
+    The display name of the user group to retrieve members from. This is a required parameter.
 
 .PARAMETER OutputPath
-    The filename (or directory path) where the Excel export will be saved.
+    An optional filename or path where the export will be saved. Defaults to the current directory.
 
 .EXAMPLE
-    .\Get-MasterAuditGeneric.ps1 -ActiveUsersGroup "All Org Staff"
+    .\Get-MasterAuditGeneric.ps1 -UserGroup "All Org Staff"
     Runs the script, exporting the final file to the current directory: MasterAudit_YYYY-MM-DD_HH-mm-ss.xlsx
 
 .EXAMPLE
-    .\Get-MasterAudit.ps1 -ActiveUsersGroup "All Org Staff" -DeviceActivityCutoffDate (Get-Date).AddDays(-7)
+    .\Get-MasterAudit.ps1 -UserGroup "All Org Staff" -DeviceActivityCutoffDate (Get-Date).AddDays(-7)
     Uses 7 days ago as the cutoff date
 
 .EXAMPLE
-    .\Get-MasterAudit.ps1 -ActiveUsersGroup "All Org Staff" -DeviceActivityCutoffDate "2025-06-07 00:00:00"
+    .\Get-MasterAudit.ps1 -UserGroup "All Org Staff" -DeviceActivityCutoffDate "2025-06-07 00:00:00"
     Uses a custom specified cutoff date
 
 .EXAMPLE
-    .\Get-MasterAudit.ps1 -ActiveUsersGroup "All Org Staff" -OutputPath "C:\Audit"
+    .\Get-MasterAudit.ps1 -UserGroup "All Org Staff" -OutputPath "C:\Audit"
     Exports the final file to C:\Audit\MasterAudit_YYYY-MM-DD_HH-mm-ss.xlsx
 
 .EXAMPLE
-    .\Get-MasterAudit.ps1 -ActiveUsersGroup "All Org Staff" -OutputPath "C:\OneDrive\MasterAudit.xlsx"
+    .\Get-MasterAudit.ps1 -UserGroup "All Org Staff" -OutputPath "C:\OneDrive\MasterAudit.xlsx"
     Creates or updates the specified file with the exact name provided
 
 .NOTES
     Author: Danny Stewart
-    Version: 1.1.0
+    Version: 1.1.1
     License: MIT
-    Created: 2025-09-03
+    Created: 2025-09-08
     Repository: https://github.com/dannystewart/entra-intune-audit
 #>
 
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [string]$ActiveUsersGroup,
+    [string]$UserGroup,
 
     [Parameter(Mandatory = $false)]
     [DateTime]$DeviceActivityCutoffDate = (Get-Date).AddDays(-30),
@@ -145,14 +144,14 @@ function Test-GraphConnection {
 }
 
 function Get-ActiveUsers {
-    Write-AuditLog "Retrieving users from '$ActiveUsersGroup' group..."
+    Write-AuditLog "Retrieving users from '$UserGroup' group..."
 
     try {
         # Get the specified user group
-        $staffGroup = Get-MgGroup -Filter "displayName eq '$ActiveUsersGroup'"
+        $staffGroup = Get-MgGroup -Filter "displayName eq '$UserGroup'"
         if (-not $staffGroup) {
-            Write-AuditLog "Could not find '$ActiveUsersGroup' group!" -Level "ERROR"
-            throw "'$ActiveUsersGroup' group not found."
+            Write-AuditLog "Could not find '$UserGroup' group!" -Level "ERROR"
+            throw "'$UserGroup' group not found."
         }
 
         # Get group members
@@ -216,7 +215,7 @@ function Get-ActiveUsers {
         }
 
         Write-Progress -Activity "Retrieving User Details" -Completed
-        Write-AuditLog "Found $($users.Count) users in '$ActiveUsersGroup' group." -Level "SUCCESS"
+        Write-AuditLog "Found $($users.Count) users in '$UserGroup' group." -Level "SUCCESS"
         Write-AuditLog "NOTE: Cutoff is not applied for users to ensure visibility on all active user accounts." -Level "INFO"
 
         $userResults = @()
