@@ -595,27 +595,27 @@ function Export-Results {
 
         # Export all data to different worksheets
         if ($Users.Count -gt 0) {
-            $Users | Export-Excel -Path $excelPath -WorksheetName "Active Users" -TableName "Active Users Table" -TableStyle Medium2 -FreezeTopRow -AutoSize -ClearSheet
+            $Users | Export-Excel -Path $excelPath -WorksheetName "ActiveUsers" -TableName "ActiveUsersTable" -TableStyle Medium2 -FreezeTopRow -AutoSize -ClearSheet
         }
 
         if ($EntraDevices.Count -gt 0) {
-            $EntraDevices | Export-Excel -Path $excelPath -WorksheetName "Entra Devices" -TableName "Entra Devices Table" -TableStyle Medium2 -FreezeTopRow -AutoSize -ClearSheet
+            $EntraDevices | Export-Excel -Path $excelPath -WorksheetName "EntraDevices" -TableName "EntraDevicesTable" -TableStyle Medium2 -FreezeTopRow -AutoSize -ClearSheet
         }
 
         if ($IntuneDevices.Count -gt 0) {
-            $IntuneDevices | Export-Excel -Path $excelPath -WorksheetName "Intune Devices" -TableName "Intune Devices Table" -TableStyle Medium2 -FreezeTopRow -AutoSize -ClearSheet
+            $IntuneDevices | Export-Excel -Path $excelPath -WorksheetName "IntuneDevices" -TableName "IntuneDevicesTable" -TableStyle Medium2 -FreezeTopRow -AutoSize -ClearSheet
         }
 
         # Add device comparison worksheets
         if ($DeviceComparison) {
             if ($DeviceComparison.MatchedDevices.Count -gt 0) {
-                $DeviceComparison.MatchedDevices | Export-Excel -Path $excelPath -WorksheetName "Matched Devices" -TableName "Matched Devices Table" -TableStyle Medium2 -FreezeTopRow -AutoSize -ClearSheet
+                $DeviceComparison.MatchedDevices | Export-Excel -Path $excelPath -WorksheetName "MatchedDevices" -TableName "MatchedDevicesTable" -TableStyle Medium2 -FreezeTopRow -AutoSize -ClearSheet
             }
             if ($DeviceComparison.EntraOnlyDevices.Count -gt 0) {
-                $DeviceComparison.EntraOnlyDevices | Export-Excel -Path $excelPath -WorksheetName "Entra-Only Devices" -TableName "Entra-Only Devices Table" -TableStyle Medium2 -FreezeTopRow -AutoSize -ClearSheet
+                $DeviceComparison.EntraOnlyDevices | Export-Excel -Path $excelPath -WorksheetName "EntraOnlyDevices" -TableName "EntraOnlyDevicesTable" -TableStyle Medium2 -FreezeTopRow -AutoSize -ClearSheet
             }
             if ($DeviceComparison.IntuneOnlyDevices.Count -gt 0) {
-                $DeviceComparison.IntuneOnlyDevices | Export-Excel -Path $excelPath -WorksheetName "Intune-Only Devices" -TableName "Intune-Only Devices Table" -TableStyle Medium2 -FreezeTopRow -AutoSize -ClearSheet
+                $DeviceComparison.IntuneOnlyDevices | Export-Excel -Path $excelPath -WorksheetName "IntuneOnlyDevices" -TableName "IntuneOnlyDevicesTable" -TableStyle Medium2 -FreezeTopRow -AutoSize -ClearSheet
             }
         }
 
